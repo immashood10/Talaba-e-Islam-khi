@@ -47,3 +47,6 @@ next-env.d.ts
 /mobile-app
 /base-server
 /talba-e-islam
+
+.vercel
+.env*
