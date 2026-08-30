@@ -1,0 +1,58 @@
+# MediaMTX configuration for the Talaba e Islam live streaming pipeline.
+#
+#   Cameras -> ATEM/OBS/vMix -> RTMP/SRT -> MediaMTX -> WebRTC/HLS -> /live page
+#
+# Publish (sending video in) requires the credentials below.
+# Reading (watching) is open - the public /live page embeds the player.
+
+authInternalUsers:
+  # Viewers: anyone can watch. The control API is also open at the MediaMTX
+  # level because docker-compose binds it to 127.0.0.1 on the host - only
+  # local processes (the Next.js app) can reach it.
+  - user: any
+    permissions:
+      - action: read
+      - action: playback
+      - action: api
+
+  # Publisher: OBS / ATEM / vMix use these credentials to stream in
+  - user: publisher
+    pass: change-this-stream-password
+    permissions:
+      - action: publish
+
+# Ingest protocols
+rtmp: yes
+rtmpAddress: :1935
+
+srt: yes
+srtAddress: :8890
+
+# Playback protocols
+hls: yes
+hlsAddress: :8888
+hlsVariant: lowLatency
+hlsAlwaysRemux: yes
+
+webrtc: yes
+webrtcAddress: :8889
+# IPs/hosts WebRTC advertises to viewers. Must include the machine's LAN IP
+# for other devices on the network to connect; in production, the server's
+# public IP or domain.
+webrtcAdditionalHosts: [192.168.100.146]
+
+# Control API (used by the Next.js app to check live status - keep internal)
+api: yes
+apiAddress: :9997
+
+# Only the "live" path is allowed - everything else is rejected.
+# Every broadcast is automatically recorded to the recordings/ folder in the
+# project root (mounted into the container by docker-compose). A new .mp4
+# file is started per recordSegmentDuration or whenever the stream restarts.
+paths:
+  live:
+    record: yes
+    recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S
+    recordFormat: fmp4
+    recordSegmentDuration: 1h
+    recordDeleteAfter: 0s

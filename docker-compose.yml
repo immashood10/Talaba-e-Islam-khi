@@ -1,0 +1,26 @@
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: talba-mediamtx
+    restart: unless-stopped
+    ports:
+      - '1935:1935' # RTMP ingest (OBS / ATEM / vMix)
+      - '8890:8890/udp' # SRT ingest
+      - '8888:8888' # HLS playback
+      - '8889:8889' # WebRTC playback
+      - '8189:8189/udp' # WebRTC ICE
+      - '127.0.0.1:9997:9997' # Control API (localhost only)
+    volumes:
+      - ./streaming/mediamtx.yml:/mediamtx.yml:ro
+      - ./recordings:/recordings
+
+  live-status:
+    build: ./streaming/status-server
+    container_name: talba-live-status
+    restart: unless-stopped
+    ports:
+      - '4000:4000' # Socket.IO - real-time live status + viewer count
+    environment:
+      - MEDIAMTX_API_URL=http://mediamtx:9997
+    depends_on:
+      - mediamtx
